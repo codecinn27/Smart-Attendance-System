@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ title }}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui/dist/semantic.min.css">
+</head>
+<body>
+  <div class="ui menu">
+    <a class="item" href="/">Home</a>
+    <a class="item" href="/enroll">Enroll</a>
+    <a class="item" href="/recognize">Recognize</a>
+    <a class="item" href="/records">Records</a>
+  </div>
+
+  <div class="ui container">
+    <h1 class="ui header">{{ title }}</h1>
+    <p>Welcome to the {{ title }} page.</p>
+
+    <form class="ui form" method="post" action="/enroll">
+      <div class="field">
+        <label>Student Name</label>
+        <input type="text" name="name" placeholder="Enter student name" required>
+      </div>
+
+      <div class="field">
+        <label>Age</label>
+        <input type="number" name="age" placeholder="Enter age" min="5" required>
+      </div>
+
+      <div class="field">
+        <label>Enrolled Classes</label>
+        <div class="ui checkbox">
+          <input type="checkbox" name="enrolled_classes" value="Mathematics">
+          <label>Mathematics</label>
+        </div><br>
+        <div class="ui checkbox">
+          <input type="checkbox" name="enrolled_classes" value="Science">
+          <label>Science</label>
+        </div><br>
+        <div class="ui checkbox">
+          <input type="checkbox" name="enrolled_classes" value="English">
+          <label>English</label>
+        </div>
+      </div>
+
+      <button class="ui primary button" type="submit">Submit Enrollment</button>
+    </form>
+    
+    {% if title == 'Enroll' %}
+    <button class="ui primary button" id="start-btn" onclick="openWebcam()">Start Webcam</button>
+    <button class="ui red button" id="stop-btn" onclick="stopWebcam()" style="display: none;">Stop Webcam</button>
+    <div style="margin-top: 20px;">
+      <video id="webcam" width="640" height="480" autoplay playsinline class="ui bordered image"></video>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+    let webcamStream;
+
+    function openWebcam() {
+      const video = document.getElementById('webcam');
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          webcamStream = stream;
+          video.srcObject = stream;
+          document.getElementById('start-btn').style.display = 'none';
+          document.getElementById('stop-btn').style.display = 'inline-block';
+        })
+        .catch(err => {
+          console.error("Error accessing the webcam: ", err);
+          alert("Webcam access is required.");
+        });
+    }
+
+    function stopWebcam() {
+      const video = document.getElementById('webcam');
+      if (webcamStream) {
+        const tracks = webcamStream.getTracks();
+        tracks.forEach(track => track.stop());
+        video.srcObject = null;
+      }
+      document.getElementById('start-btn').style.display = 'inline-block';
+      document.getElementById('stop-btn').style.display = 'none';
+    }
+  </script>
+
+<!-- form scripts to save into database -->
+  <script>
+    // Activate checkboxes
+    document.querySelectorAll('.ui.checkbox').forEach(cb => {
+      cb.classList.add('checked');  // Optional, ensures UI toggle
+    });
+  </script>
+</body>
+</html>

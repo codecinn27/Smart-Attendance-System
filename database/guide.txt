@@ -1,0 +1,9 @@
+
+1) create table
+-> table_creation.py
+
+2) create dummy data
+-> dummy_data.py
+
+3) display dummy data
+-> dispaly_data.py

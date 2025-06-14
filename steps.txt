@@ -1,0 +1,77 @@
+
+1) setup virtual environment for python 3.10
+
+py -3.10 -m venv env
+.\env\Scripts\Activate
+
+2) upgrade pip
+
+python.exe -m pip install --upgrade pip
+
+
+3) Install torch from  
+* make you have install cuda and cudnn 
+    * ref: https://github.com/entbappy/Setup-NVIDIA-GPU-for-Deep-Learning
+    * reference installing video
+        * https://www.youtube.com/watch?v=krAUwYslS8E
+        * https://www.youtube.com/watch?v=nATRPPZ5dGE
+* reference from https://pytorch.org/get-started/locally/
+pip install torch==2.2.2+cu118 torchvision==0.17.2+cu118 torchaudio==2.2.2 --index-url https://download.pytorch.org/whl/cu118
+
+
+4) test pytorch script in test_torch.py
+
+5) run facenet-torch
+
+https://kean-chan.medium.com/real-time-facial-recognition-with-pytorch-facenet-ca3f6a510816
+
+just run this  (facenet_pytorch use torch 2.2 to 2.3)
+pip install facenet_pytorch tqdm
+dont pip install torch if you have install torch for gpu 
+
+
+6) pip install opencv-python
+
+7) run code
+
+version 1: main2.py + saved
+version 2: main3.py + saved2 + take_pic.py
+version 3: dataset-creator.py -> trainer.py -> recognition.py 
+    -> include (dataset , sqlite.db, embeddings.pkl)
+
+project/
+│
+├── app.py                      # 🔥 Main FastAPI app
+├── requirements.txt            # 📦 Package dependencies
+├── embeddings.pkl              # 📂 Saved face embeddings
+│
+├── templates/                  # 🧩 Jinja2 HTML templates
+│   └── recognize.html
+│
+├── static/                     # 🎨 JS, CSS, images (optional)
+│
+├── recognition/                # 🧠 AI-related logic
+│   └── face_recognizer.py      # Face detection + recognition logic
+
+
+8) Use sqlite instead of json for easy query and display
+-> have 4 table
+    -> student , class, enrollment, attendance 
+
+    -> What does the enrollment table do?
+        It stores which student is enrolled in which class.
+        It typically has:
+
+            enrollment_id (primary key, unique ID for each enrollment record)
+            student_id (foreign key linking to the student)
+            class_id (foreign key linking to the class)
+
+        You can easily find all students in a specific class by querying enrollments with that class’s ID.
+        You can find all classes a specific student is enrolled in by querying enrollments with that student’s ID.
+        Keeps your data normalized, avoids duplication.
+
+-> 1st step: create .db with 4 tables
+        run table_creation.py 
+
+-> 2nd step: create dummy data to display in forms 
+        run dummy_data.py

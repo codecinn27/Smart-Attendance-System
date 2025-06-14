@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ title }}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui/dist/semantic.min.css">
+  <style>
+    body {
+      background: #f9f9f9;
+      padding-top: 2em;
+    }
+    #loader-container {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255,255,255,0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      transition: opacity 0.5s ease;
+    }
+    #loader-container.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #video-stream {
+      border: 5px solid #ddd;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .ui.container {
+      text-align: center;
+      margin-top: 4em;
+    }
+  </style>
+</head>
+<body>
+    <div class="ui menu">
+        <a class="item" href="/">Home</a>
+        <a class="item" href="/enroll">Enroll</a>
+        <a class="item" href="/recognize">Recognize</a>
+        <a class="item" href="/records">Records</a>
+    </div>
+    <div class="ui container">
+        <h2 class="ui header">🔍 Live Face Recognition</h2>
+        <div id="progress-container" style="width: 300px; height: 20px;"></div>
+        </div>
+        <img id="video-stream" width="640" height="480" alt="Loading video..." />
+        <div id="error-message" class="ui red message" style="display:none;"></div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/progressbar.js"></script>
+    <script>
+        // Initialize progress bar (line style)
+        var bar = new ProgressBar.Line('#progress-container', {
+            strokeWidth: 4,
+            easing: 'easeInOut',
+            duration: 4000,
+            color: '#4caf50',
+            trailColor: '#eee',
+            trailWidth: 1,
+            svgStyle: {width: '100%', height: '100%'}
+        });
+
+        // Start animating progress bar from 0 to 100% in 4 seconds
+        bar.animate(1.0);
+
+        // Single websocket instance
+        const ws = new WebSocket("ws://localhost:8000/ws/recognize");
+
+        ws.onopen = () => {
+            console.log("WebSocket connection opened");
+        };
+
+        ws.onmessage = (event) => {
+            // On first message/frame, jump progress bar to 100% and hide it
+            bar.set(1);
+            document.getElementById("video-stream").src = "data:image/jpeg;base64," + event.data;
+            document.getElementById("progress-container").style.display = 'none';
+        };
+
+        ws.onclose = () => {
+            console.log("WebSocket closed");
+        };
+
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+            document.getElementById("error-message").style.display = 'block';
+            document.getElementById("error-message").textContent = "An error occurred while connecting.";
+            document.getElementById("progress-container").style.display = 'none';
+        };
+    </script>
+
+
+</body>
+</html>

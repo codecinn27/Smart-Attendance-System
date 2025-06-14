@@ -1,0 +1,16 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environment files
+env/
+basic_testing/version1/saved
+basic_testing/version2/saved2
+basic_testing/version3/dataset
+
+# SQLite database
+*.db
+
+# Static/media uploads (optional)
+static*
