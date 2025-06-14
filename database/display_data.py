@@ -1,5 +1,26 @@
 import sqlite3
 
+def init_db():
+    conn = sqlite3.connect('attendance.db')
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS students (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE,
+            age INTEGER
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS enrollments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER,
+            enrolled_class TEXT,
+            FOREIGN KEY(student_id) REFERENCES students(id)
+        )
+    ''')
+    conn.commit()
+    conn.close()
+    
 def fetch_and_print(cursor, table_name):
     cursor.execute(f"SELECT * FROM {table_name}")
     rows = cursor.fetchall()

@@ -1,0 +1,4 @@
+version 1: main2.py + saved (add your own images)
+version 2: main3.py + saved2 (add your own images) + take_pic.py
+version 3: dataset-creator.py -> trainer.py -> recognition.py 
+    -> include (dataset (add your own images) , sqlite.db, embeddings.pkl)

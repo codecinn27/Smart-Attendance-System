@@ -14,7 +14,70 @@
 
   <div class="ui container">
     <h1 class="ui header">{{ title }}</h1>
-    <p>Welcome to the {{ title }} page.</p>
+
+    <!-- Section 1: Students -->
+    <h2 class="ui header">Students</h2>
+    <table class="ui celled table">
+      <thead>
+        <tr><th>Name</th><th>Age</th><th>Enrolled Classes</th></tr>
+      </thead>
+      <tbody>
+        {% for student_id, name, age in students %}
+        <tr>
+          <td>{{ name }}</td>
+          <td>{{ age }}</td>
+          <td>
+            {% if student_enrollments[student_id] %}
+              {{ student_enrollments[student_id] | join(", ") }}
+            {% else %}
+              None
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Section 2: Classes -->
+    <h2 class="ui header">Classes</h2>
+    {% for class_id, class_name, teacher in classes %}
+      <h3>{{ class_name }} (Teacher: {{ teacher }})</h3>
+      <p><strong>Enrolled Students:</strong>
+        {% if class_enrollments[class_id] %}
+          {{ class_enrollments[class_id] | join(", ") }}
+        {% else %}
+          None
+        {% endif %}
+      </p>
+    {% endfor %}
+
+    <!-- Section 3: Attendance -->
+    <h2 class="ui header">Attendance Records</h2>
+    <table class="ui celled table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Class</th>
+          <th>Student</th>
+          <th>Status</th>
+          <th>Clock In</th>
+          <th>Clock Out</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for date, class_name, student_name, status, clock_in, clock_out in attendance_records %}
+        <tr>
+          <td>{{ date }}</td>
+          <td>{{ class_name }}</td>
+          <td>{{ student_name }}</td>
+          <td>{{ status }}</td>
+          <td>{{ clock_in if clock_in else "N/A" }}</td>
+          <td>{{ clock_out if clock_out else "N/A" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
   </div>
 </body>
 </html>
