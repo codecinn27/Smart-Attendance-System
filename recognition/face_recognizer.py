@@ -27,7 +27,7 @@ def preprocess_face(face_img, target_size=160):
     face_tensor = (face_tensor - 127.5) / 128.0
     return face_tensor.unsqueeze(0).to(device)
 
-def recognize_faces(frame, threshold=0.7):
+def recognize_faces(frame, threshold=0.7, class_id=None):
     
     # Load latest embeddings every time the function runs
     try:
@@ -79,6 +79,16 @@ def recognize_faces(frame, threshold=0.7):
                     cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                     cv2.putText(frame, f"{label} ({best_score:.2f})", (x1, y1 - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+                    
+                                        # ✅ Save attendance if class_id is passed and face is recognized
+                    if class_id and best_match:
+                        try:
+                            from database.helper_function import save_attendance_to_db, get_student_id_by_name
+                            student_id = get_student_id_by_name(best_match)
+                            if student_id:
+                                save_attendance_to_db(student_id, class_id)
+                        except Exception as e:
+                            print(f"[Attendance] Error saving attendance: {e}")
             except Exception as e:
                 print(f"[FaceRecognition] Error processing face: {e}")
                 continue

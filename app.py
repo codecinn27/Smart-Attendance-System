@@ -16,6 +16,9 @@ import sqlite3
 from urllib.parse import quote
 from typing import Dict
 import uuid
+from database.helper_function import get_class_id_by_value, mark_attendance
+from datetime import datetime
+import json
 
 app = FastAPI()
 # Set up Jinja2 templates
@@ -152,36 +155,56 @@ async def get_training_status(session_id: str):
 @app.get("/recognize", response_class=HTMLResponse)
 async def recognize(request: Request):
     return templates.TemplateResponse("recognize.html", {"request": request, "title": "Recognize"})
+
 @app.websocket("/ws/recognize")
 async def websocket_recognize(websocket: WebSocket):
-    
     await websocket.accept()
 
+    # Get class from query
+    class_name = websocket.query_params.get("class")
+    print("▶ Class name from frontend:", class_name)
+    
+    if not class_name:
+        print("❌ No class selected")
+        await websocket.close()
+        return
+
+    class_id = get_class_id_by_value(class_name)
+    if not class_id:
+        print("❌ Class not found in DB")
+        await websocket.close()
+        return
+
+    print(f"➡️ Recognizing attendance for class: {class_name} (ID: {class_id})")
+
+    # Start webcam
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    
+    if not cap.isOpened():
+        print("❌ Failed to open webcam")
+        await websocket.close()
+        return
+    else:
+        print("✅ Webcam opened")
 
     try:
         while True:
             ret, frame = cap.read()
             if not ret:
+                print("❌ Failed to read from webcam")
                 break
 
-            # ✅ Call your face recognition function
-            frame = recognize_faces(frame)
-
-            # ✅ Encode to JPEG and send as base64
+            frame = recognize_faces(frame, class_id=class_id)  # ← use class_id for attendance
+            
             _, buffer = cv2.imencode('.jpg', frame)
             jpg_as_text = base64.b64encode(buffer).decode('utf-8')
-
             await websocket.send_text(jpg_as_text)
-            await asyncio.sleep(0.03)  # Optional: Reduce CPU usage
-
+            
+            await asyncio.sleep(0.03)
     except WebSocketDisconnect:
         print("[WebSocket] Client disconnected")
-        
-    except Exception as e:
-        print(f"[WebSocket Error] {e}")
     finally:
         cap.release()
         print("[WebSocket] Disconnected")

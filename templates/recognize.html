@@ -54,9 +54,9 @@
                 <i class="dropdown icon"></i>
                 <div class="default text">Choose a class</div>
                 <div class="menu">
-                  <div class="item" data-value="classA">Computer Vision And Pattern Recognition</div>
-                  <div class="item" data-value="classB">High Performance Computing</div>
-                  <div class="item" data-value="classC">Engineering Economy</div>
+                  <div class="item" data-value="Computer Vision And Pattern Recognition">Computer Vision And Pattern Recognition</div>
+                  <div class="item" data-value="High Performance Computing">High Performance Computing</div>
+                  <div class="item" data-value="Engineering Economy">Engineering Economy</div>
                 </div>
               </div>
             </div>
@@ -77,7 +77,9 @@
       </div>
     </div>
 
-
+    <!-- for dropdown menu js, using jquery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.5.0/dist/semantic.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/progressbar.js"></script>
     <script>
         // Initialize progress bar (line style)
@@ -93,49 +95,52 @@
 
         // Start animating progress bar from 0 to 100% in 4 seconds
         bar.animate(1.0);
+        let selectedClass = null;
+        let ws = null;
 
-        // Single websocket instance
-        const ws = new WebSocket("ws://localhost:8000/ws/recognize");
+        function startWebSocket(selectedClass) {
+          // Close previous connection if any
+          if (ws) {
+            ws.close();
+          }
 
-        ws.onopen = () => {
-            console.log("WebSocket connection opened");
+          const classParam = encodeURIComponent(selectedClass);
+          ws = new WebSocket(`ws://localhost:8000/ws/recognize?class=${classParam}`);
+
+          ws.onopen = () => {
+            console.log("✅ WebSocket opened for:", selectedClass);
             document.getElementById("video-stream").style.display = 'block';
-        };
+          };
 
-        ws.onmessage = (event) => {
-            // On first message/frame, jump progress bar to 100% and hide it
-            bar.set(1);
+          ws.onmessage = (event) => {
+            // Display the video feed
             document.getElementById("video-stream").src = "data:image/jpeg;base64," + event.data;
             document.getElementById("progress-container").style.display = 'none';
-          
-        };
+          };
 
-        ws.onclose = () => {
-            console.log("WebSocket closed");
-        };
+          ws.onclose = () => {
+            console.log("❌ WebSocket closed");
+          };
 
-        ws.onerror = (error) => {
+          ws.onerror = (error) => {
             console.error("WebSocket error:", error);
             document.getElementById("error-message").style.display = 'block';
-            document.getElementById("error-message").textContent = "An error occurred while connecting.";
+            document.getElementById("error-message").textContent = "An error occurred.";
             document.getElementById("progress-container").style.display = 'none';
-        };
-    </script>
+          };
+        }
 
-    <!-- for dropdown menu js, using jquery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.5.0/dist/semantic.min.js"></script>
-    <script>
-      $(document).ready(function () {
+        // Activate Semantic UI dropdown
         $('#classDropdown').dropdown({
           onChange: function (value, text, $selectedItem) {
-            console.log("Selected:", value);
-            // Do something with the selected class
+            if (value) {
+              console.log("▶ Class selected:", value);
+              startWebSocket(value); // Start streaming with selected class
+            }
           }
         });
-      });
-    </script>
 
+    </script>
 
 </body>
 </html>

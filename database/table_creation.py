@@ -1,4 +1,6 @@
 import sqlite3
+import shutil
+import os
 
 def create_database():
     conn = sqlite3.connect('attendance.db')
@@ -57,6 +59,25 @@ def create_database():
     conn.commit()
     conn.close()
     print("Database and tables created successfully!")
+    
+def clear_folders():
+    dataset_path = './static/dataset'
+    trained_path = './static/trained'
+
+    # Delete all contents inside ./static/dataset (keep dataset folder)
+    if os.path.exists(dataset_path):
+        for item in os.listdir(dataset_path):
+            item_path = os.path.join(dataset_path, item)
+            if os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+            else:
+                os.remove(item_path)
+
+    # Delete the entire ./static/trained folder (and all contents)
+    if os.path.exists(trained_path):
+        shutil.rmtree(trained_path)
+        
 
 if __name__ == "__main__":
     create_database()
+    clear_folders()
