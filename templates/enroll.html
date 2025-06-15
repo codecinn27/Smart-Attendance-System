@@ -5,12 +5,16 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui/dist/semantic.min.css">
 </head>
 <body>
-  <div class="ui menu">
-    <a class="item" href="/">Home</a>
-    <a class="item" href="/enroll">Enroll</a>
-    <a class="item" href="/recognize">Recognize</a>
-    <a class="item" href="/records">Records</a>
+  <div style="display: flex; justify-content: center;">
+    <div class="ui menu">
+      <a class="item" href="/" style="padding: 1em 2em;">Home</a>
+      <a class="item" href="/enroll" style="padding: 1em 2em;">Enroll</a>
+      <a class="item" href="/recognize" style="padding: 1em 2em;">Recognize</a>
+      <a class="item" href="/records" style="padding: 1em 2em;">Records</a>
+    </div>
   </div>
+
+
 
   <div class="ui container">
     <h1 class="ui header">{{ title }}</h1>
@@ -47,11 +51,10 @@
       </form>
     </div>
     <div class="ui segment">
-      <form method="post" action="/train" style="margin-top: 20px;">
-        <button class="ui orange button" type="submit">
-          🔄 Train Model from Captured Faces
-        </button>
-      </form>
+      <button onclick="startTraining()">Start Training</button>
+      <p id="status"></p>
+      <div id="log"></div>
+      <div id="results"></div>
     </div>
 
     
@@ -191,6 +194,37 @@
         };
       }
     });
+  </script>
+  <script>
+    async function startTraining() {
+      document.getElementById('status').innerText = "Training started...";
+      document.getElementById('log').innerText = "";
+      document.getElementById('results').innerHTML = "";
+
+      const res = await fetch('/train/start', { method: 'POST' });
+      const data = await res.json();
+      const sessionId = data.session_id;
+
+      pollStatus(sessionId);
+    }
+
+    async function pollStatus(sessionId) {
+      const statusRes = await fetch(`/train/status/${sessionId}`);
+      const data = await statusRes.json();
+
+      document.getElementById('status').innerText = `Status: ${data.status}`;
+
+      if (data.log) {
+        document.getElementById('log').innerText = data.log;
+      }
+
+
+      if (data.status === 'done' || data.status === 'error') {
+        return;
+      }
+
+      setTimeout(() => pollStatus(sessionId), 1000);  // poll every 1s
+    }
   </script>
 
 

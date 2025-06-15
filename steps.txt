@@ -88,3 +88,4 @@ project/
 ## Future to add
 1) display student details with image
 2) /enroll before the webcam turn on have a progress bar loading 
+

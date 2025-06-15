@@ -1,5 +1,5 @@
 
-from fastapi import FastAPI, Request, WebSocket, Form, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, Form, WebSocketDisconnect, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -11,9 +11,11 @@ from pathlib import Path
 from io import BytesIO
 from PIL import Image
 import numpy as np
-from recognition.face_recognizer import recognize_faces, mtcnn, generate_embeddings #for face recognition
+from recognition.face_recognizer import recognize_faces, mtcnn, generate_embeddings_async #for face recognition
 import sqlite3
 from urllib.parse import quote
+from typing import Dict
+import uuid
 
 app = FastAPI()
 # Set up Jinja2 templates
@@ -131,12 +133,22 @@ async def enroll_capture_ws(websocket: WebSocket, name: str):
     finally:
         await websocket.close()
       
-      
-@app.post("/train")
-async def train_embeddings(reques: Request):
-    generate_embeddings()
-    return RedirectResponse(url="/enroll?trained=true", status_code=303)
-  
+training_sessions: Dict[str, Dict] = {}
+
+@app.post("/train/start")
+async def start_training():
+    session_id = str(uuid.uuid4())
+    training_sessions[session_id] = {"status": "queued", "log": "", "processed_info": []}
+    asyncio.create_task(asyncio.to_thread(generate_embeddings_async, session_id, training_sessions))
+    return {"session_id": session_id}
+
+@app.get("/train/status/{session_id}")
+async def get_training_status(session_id: str):
+    session = training_sessions.get(session_id)
+    if not session:
+        return {"status": "not_found"}
+    return session
+
 @app.get("/recognize", response_class=HTMLResponse)
 async def recognize(request: Request):
     return templates.TemplateResponse("recognize.html", {"request": request, "title": "Recognize"})

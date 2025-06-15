@@ -6,7 +6,6 @@
   <style>
     body {
       background: #f9f9f9;
-      padding-top: 2em;
     }
     #loader-container {
       position: absolute;
@@ -35,19 +34,50 @@
   </style>
 </head>
 <body>
-    <div class="ui menu">
-        <a class="item" href="/">Home</a>
-        <a class="item" href="/enroll">Enroll</a>
-        <a class="item" href="/recognize">Recognize</a>
-        <a class="item" href="/records">Records</a>
+    <div style="display: flex; justify-content: center;">
+      <div class="ui menu">
+        <a class="item" href="/" style="padding: 1em 2em;">Home</a>
+        <a class="item" href="/enroll" style="padding: 1em 2em;">Enroll</a>
+        <a class="item" href="/recognize" style="padding: 1em 2em;">Recognize</a>
+        <a class="item" href="/records" style="padding: 1em 2em;">Records</a>
+      </div>
     </div>
-    <div class="ui container">
+    <div style="display: flex; justify-content: center; align-items: center; flex-direction: column; min-height: 80vh;">
+      <div class="ui container" style="text-align: center;">
         <h2 class="ui header">🔍 Live Face Recognition</h2>
-        <div id="progress-container" style="width: 300px; height: 20px;"></div>
+        <div style="display: flex; justify-content: center; margin-top: 2em;">
+          <div class="ui form">
+            <div class="field">
+              <label>Select Class</label>
+              <div class="ui selection dropdown" id="classDropdown">
+                <input type="hidden" name="class">
+                <i class="dropdown icon"></i>
+                <div class="default text">Choose a class</div>
+                <div class="menu">
+                  <div class="item" data-value="classA">Computer Vision And Pattern Recognition</div>
+                  <div class="item" data-value="classB">High Performance Computing</div>
+                  <div class="item" data-value="classC">Engineering Economy</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <img id="video-stream" style="display:none;" width="640" height="480" alt="Loading video..." />
-        <div id="error-message" class="ui red message" style="display:none;"></div>
+        <!-- Centered Progress Bar -->
+        <div id="progress-container" style="width: 300px; height: 20px; margin: 1em auto;"></div>
+
+        <!-- Centered Image Stream -->
+        <div style="display: flex; justify-content: center;">
+          <img id="video-stream"
+              style="display: none; width: 800px; max-width: 100%; height: auto;"
+              alt="Loading video..." />
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message" class="ui red message" style="display: none; margin-top: 1em;"></div>
+      </div>
     </div>
+
+
     <script src="https://cdn.jsdelivr.net/npm/progressbar.js"></script>
     <script>
         // Initialize progress bar (line style)
@@ -90,6 +120,20 @@
             document.getElementById("error-message").textContent = "An error occurred while connecting.";
             document.getElementById("progress-container").style.display = 'none';
         };
+    </script>
+
+    <!-- for dropdown menu js, using jquery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.5.0/dist/semantic.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        $('#classDropdown').dropdown({
+          onChange: function (value, text, $selectedItem) {
+            console.log("Selected:", value);
+            // Do something with the selected class
+          }
+        });
+      });
     </script>
 
 

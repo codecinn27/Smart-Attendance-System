@@ -84,66 +84,83 @@ def recognize_faces(frame, threshold=0.7):
                 continue
     return frame
 
-def generate_embeddings(dataset_path='./static/dataset', output_path='embeddings.pkl'):
-    # Set device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Using device: {device}")
+def generate_embeddings_async(session_id, training_sessions):
+    import io, sys
+    import torch.nn.functional as F
+    from facenet_pytorch import MTCNN, InceptionResnetV1
+    import torch, os, cv2, pickle, shutil
 
-    # Initialize models
+    log_stream = io.StringIO()
+    sys_stdout = sys.stdout
+    sys.stdout = log_stream
+
+    # Device and models
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"[Train-{session_id}] Using device: {device}")
     resnet = InceptionResnetV1(pretrained='vggface2').eval().to(device)
-    mtcnn = MTCNN(
-        image_size=160,
-        margin=0,
-        keep_all=False,
-        min_face_size=20,
-        device=device
-    )
+    mtcnn = MTCNN(image_size=160, keep_all=False, device=device)
 
     def get_embedding(face_img):
-        # Convert BGR to RGB
         face_img_rgb = cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB)
-        
-        # Preprocess with MTCNN and get embedding
         face_tensor = mtcnn(face_img_rgb)
-        
         if face_tensor is not None:
+            if len(face_tensor.shape) == 3:
+                face_tensor = face_tensor.unsqueeze(0)  # add batch dimension
             face_tensor = face_tensor.to(device)
-            embedding = resnet(face_tensor.unsqueeze(0))
+            embedding = resnet(face_tensor)
             return F.normalize(embedding, p=2, dim=1)[0].detach().cpu()
-        
         return None
 
-    embeddings_db = {}
+    training_sessions[session_id] = {"status": "in_progress", "log": "", "processed_info": []}
 
-    for person_name in os.listdir(dataset_path):
-        person_path = os.path.join(dataset_path, person_name)
-        if not os.path.isdir(person_path):
-            continue
+    try:
+        embeddings_db = {}
+        dataset_path = './static/dataset'
+        output_path = './static/trained'
+        os.makedirs(output_path, exist_ok=True)
 
-        embeddings = []
-        processed_count = 0
+        for person_name in os.listdir(dataset_path):
+            person_path = os.path.join(dataset_path, person_name)
+            if not os.path.isdir(person_path):
+                continue
 
-        for img_file in sorted(os.listdir(person_path))[:30]:  # Only take first 30 images
-            if img_file.lower().endswith(('.jpg', '.jpeg', '.png')):
-                img_path = os.path.join(person_path, img_file)
-                img = cv2.imread(img_path)
-                
-                if img is not None:
-                    embedding = get_embedding(img)
-                    if embedding is not None:
-                        embeddings.append(embedding)
-                        processed_count += 1
+            embeddings = []
+            image_paths = []
+            person_output = os.path.join(output_path, person_name)
+            os.makedirs(person_output, exist_ok=True)
 
-        if embeddings:
-            avg_embedding = torch.stack(embeddings).mean(dim=0)
-            embeddings_db[person_name] = avg_embedding
-            print(f"✅ Processed {processed_count} images for {person_name}")
-        else:
-            print(f"⚠️ No valid faces found for {person_name}")
+            for img_file in os.listdir(person_path):
+                if img_file.lower().endswith(('.jpg', '.jpeg', '.png')):
+                    img_path = os.path.join(person_path, img_file)
+                    img = cv2.imread(img_path)
 
-    with open(output_path, 'wb') as f:
-        pickle.dump(embeddings_db, f)
+                    if img is not None:
+                        embedding = get_embedding(img)
+                        if embedding is not None:
+                            embeddings.append(embedding)
+                            shutil.copy(img_path, os.path.join(person_output, img_file))
+                            image_paths.append(f"/static/trained/{person_name}/{img_file}")
 
-    print(f"\n🎉 Embeddings generation completed! Saved {len(embeddings_db)} identities to '{output_path}'")
+            if embeddings:
+                avg_embedding = torch.stack(embeddings).mean(dim=0)
+                embeddings_db[person_name] = avg_embedding
+                print(f"✅ Processed {len(image_paths)} images for {person_name}")
+                training_sessions[session_id]["processed_info"].append({
+                    "name": person_name,
+                    "images": image_paths
+                })
+            else:
+                print(f"⚠️ No valid faces found for {person_name}")
 
-    
+        with open("embeddings.pkl", "wb") as f:
+            pickle.dump(embeddings_db, f)
+
+        print(f"\n🎉 Embeddings generation completed! Saved {len(embeddings_db)} identities.")
+        training_sessions[session_id]["status"] = "done"
+
+    except Exception as e:
+        training_sessions[session_id]["status"] = "error"
+        print(f"❌ Error during training: {e}")
+    finally:
+        sys.stdout = sys_stdout
+        training_sessions[session_id]["log"] = log_stream.getvalue()
