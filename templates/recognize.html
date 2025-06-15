@@ -45,7 +45,7 @@
         <h2 class="ui header">🔍 Live Face Recognition</h2>
         <div id="progress-container" style="width: 300px; height: 20px;"></div>
         </div>
-        <img id="video-stream" width="640" height="480" alt="Loading video..." />
+        <img id="video-stream" style="display:none;" width="640" height="480" alt="Loading video..." />
         <div id="error-message" class="ui red message" style="display:none;"></div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/progressbar.js"></script>
@@ -69,6 +69,7 @@
 
         ws.onopen = () => {
             console.log("WebSocket connection opened");
+            document.getElementById("video-stream").style.display = 'block';
         };
 
         ws.onmessage = (event) => {
@@ -76,6 +77,7 @@
             bar.set(1);
             document.getElementById("video-stream").src = "data:image/jpeg;base64," + event.data;
             document.getElementById("progress-container").style.display = 'none';
+          
         };
 
         ws.onclose = () => {

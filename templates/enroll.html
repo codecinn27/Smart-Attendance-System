@@ -49,55 +49,11 @@
     
 
     <div class="ui segment" id="webcam-container" style="display:none;">
-      <video id="webcam" width="640" height="480" autoplay playsinline></video>
-      <img id="annotated-stream" width="640" height="480" alt="Annotated Stream" style="margin-top: 10px; border: 1px solid #ccc;" />
+      <img id="annotated-stream" width="640" height="480" style="margin-top: 10px; border: 1px solid #ccc;" />
     </div>
     
   </div>
 
-  <!-- <script>
-    function openWebcam() {
-      const video = document.getElementById('webcam');
-      const container = document.getElementById('webcam-container');
-
-      container.style.display = 'block';  // Show video container
-
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: true })
-          .then((stream) => {
-            video.srcObject = stream;
-            video.play();
-          })
-          .catch((err) => {
-            alert('Could not access webcam: ' + err);
-          });
-      } else {
-        alert('getUserMedia not supported in this browser.');
-      }
-    }
-
-    function stopWebcam() {
-      const video = document.getElementById('webcam');
-      const stream = video.srcObject;
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-      video.srcObject = null;
-
-      document.getElementById('webcam-container').style.display = 'none';
-    }
-
-    // Call openWebcam if name param exists (start webcam on page load)
-    window.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const enrolledName = urlParams.get('name');
-      if (enrolledName) {
-        openWebcam();
-        startFaceCapture(enrolledName);
-      }
-    });
-
-  </script> -->
 
   <script>
     let ws;
