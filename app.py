@@ -11,7 +11,7 @@ from pathlib import Path
 from io import BytesIO
 from PIL import Image
 import numpy as np
-from recognition.face_recognizer import recognize_faces, mtcnn #for face recognition
+from recognition.face_recognizer import recognize_faces, mtcnn, generate_embeddings #for face recognition
 import sqlite3
 from urllib.parse import quote
 
@@ -130,12 +130,19 @@ async def enroll_capture_ws(websocket: WebSocket, name: str):
         print(f"[Enroll WS] Error: {e}")
     finally:
         await websocket.close()
-        
+      
+      
+@app.post("/train")
+async def train_embeddings(reques: Request):
+    generate_embeddings()
+    return RedirectResponse(url="/enroll?trained=true", status_code=303)
+  
 @app.get("/recognize", response_class=HTMLResponse)
 async def recognize(request: Request):
     return templates.TemplateResponse("recognize.html", {"request": request, "title": "Recognize"})
 @app.websocket("/ws/recognize")
 async def websocket_recognize(websocket: WebSocket):
+    
     await websocket.accept()
 
     cap = cv2.VideoCapture(0)

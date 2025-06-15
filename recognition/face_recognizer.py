@@ -4,20 +4,11 @@ import torch.nn.functional as F
 import pickle
 import numpy as np
 from facenet_pytorch import MTCNN, InceptionResnetV1
+import os
 
 # Set device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"[FaceRecognition] Using device: {device}")
-
-# Load precomputed embeddings
-try:
-    with open('embeddings.pkl', 'rb') as f:
-        embeddings_db = pickle.load(f)
-    embeddings_db = {name: emb.to(device) for name, emb in embeddings_db.items()}
-    print(f"[FaceRecognition] Loaded embeddings for {len(embeddings_db)} identities")
-except FileNotFoundError:
-    print("[FaceRecognition] embeddings.pkl not found.")
-    embeddings_db = {}
 
 # Initialize models
 mtcnn = MTCNN(
@@ -37,6 +28,16 @@ def preprocess_face(face_img, target_size=160):
     return face_tensor.unsqueeze(0).to(device)
 
 def recognize_faces(frame, threshold=0.7):
+    
+    # Load latest embeddings every time the function runs
+    try:
+        with open('embeddings.pkl', 'rb') as f:
+            raw_embeddings = pickle.load(f)
+            embeddings_db = {name: emb.to(device) for name, emb in raw_embeddings.items()}
+    except Exception as e:
+        print(f"[FaceRecognition] Failed to load embeddings: {e}")
+        return frame
+    
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     boxes, probs, landmarks = mtcnn.detect(frame_rgb, landmarks=True)
 
@@ -82,3 +83,67 @@ def recognize_faces(frame, threshold=0.7):
                 print(f"[FaceRecognition] Error processing face: {e}")
                 continue
     return frame
+
+def generate_embeddings(dataset_path='./static/dataset', output_path='embeddings.pkl'):
+    # Set device
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
+
+    # Initialize models
+    resnet = InceptionResnetV1(pretrained='vggface2').eval().to(device)
+    mtcnn = MTCNN(
+        image_size=160,
+        margin=0,
+        keep_all=False,
+        min_face_size=20,
+        device=device
+    )
+
+    def get_embedding(face_img):
+        # Convert BGR to RGB
+        face_img_rgb = cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB)
+        
+        # Preprocess with MTCNN and get embedding
+        face_tensor = mtcnn(face_img_rgb)
+        
+        if face_tensor is not None:
+            face_tensor = face_tensor.to(device)
+            embedding = resnet(face_tensor.unsqueeze(0))
+            return F.normalize(embedding, p=2, dim=1)[0].detach().cpu()
+        
+        return None
+
+    embeddings_db = {}
+
+    for person_name in os.listdir(dataset_path):
+        person_path = os.path.join(dataset_path, person_name)
+        if not os.path.isdir(person_path):
+            continue
+
+        embeddings = []
+        processed_count = 0
+
+        for img_file in sorted(os.listdir(person_path))[:30]:  # Only take first 30 images
+            if img_file.lower().endswith(('.jpg', '.jpeg', '.png')):
+                img_path = os.path.join(person_path, img_file)
+                img = cv2.imread(img_path)
+                
+                if img is not None:
+                    embedding = get_embedding(img)
+                    if embedding is not None:
+                        embeddings.append(embedding)
+                        processed_count += 1
+
+        if embeddings:
+            avg_embedding = torch.stack(embeddings).mean(dim=0)
+            embeddings_db[person_name] = avg_embedding
+            print(f"✅ Processed {processed_count} images for {person_name}")
+        else:
+            print(f"⚠️ No valid faces found for {person_name}")
+
+    with open(output_path, 'wb') as f:
+        pickle.dump(embeddings_db, f)
+
+    print(f"\n🎉 Embeddings generation completed! Saved {len(embeddings_db)} identities to '{output_path}'")
+
+    
