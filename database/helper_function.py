@@ -37,7 +37,7 @@ def save_attendance_to_db(student_id, class_id):
     result = cursor.fetchone()
     if not result:
         conn.close()
-        print("[DB] Student not enrolled in this class.")
+        #print("[DB] Student not enrolled in this class.")
         return
 
     enrollment_id = result[0]
@@ -50,7 +50,7 @@ def save_attendance_to_db(student_id, class_id):
     """, (enrollment_id, date_today))
     if cursor.fetchone():
         conn.close()
-        return  # Already marked today
+        return  False# Already marked today
 
     cursor.execute("""
         INSERT INTO attendance (enrollment_id, date, status, clock_in_time)
@@ -60,8 +60,7 @@ def save_attendance_to_db(student_id, class_id):
     conn.commit()
     conn.close()
     print(f"[DB] Attendance saved for student {student_id} in class {class_id}")
-    
-import sqlite3
+    return True # successfully saved
 
 def has_attendance_today(student_id, class_id, date_str):
     conn = sqlite3.connect("attendance.db")

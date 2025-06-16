@@ -7,6 +7,7 @@ from facenet_pytorch import MTCNN, InceptionResnetV1
 import os
 from datetime import datetime
 from database.helper_function import save_attendance_to_db, get_student_id_by_name,  has_attendance_today
+from pathlib import Path
 
 # Set device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -24,6 +25,11 @@ mtcnn = MTCNN(
 )
 resnet = InceptionResnetV1(pretrained='vggface2').eval().to(device)
 
+# Load face embedding global, load only when changed
+embedding_file = Path("embeddings.pkl")
+last_loaded_time = 0
+embeddings_db = {}
+
 def preprocess_face(face_img, target_size=160):
     face_img = cv2.resize(face_img, (target_size, target_size))
     face_tensor = torch.from_numpy(face_img).permute(2, 0, 1).float()
@@ -31,45 +37,46 @@ def preprocess_face(face_img, target_size=160):
     return face_tensor.unsqueeze(0).to(device)
 
 def recognize_faces(frame, threshold=0.7, class_id=None, class_name=None):
-    
-    # Load latest embeddings every time the function runs
-    try:
-        with open('embeddings.pkl', 'rb') as f:
-            raw_embeddings = pickle.load(f)
-            embeddings_db = {name: emb.to(device) for name, emb in raw_embeddings.items()}
-    except Exception as e:
-        print(f"[FaceRecognition] Failed to load embeddings: {e}")
-        return frame
-    
+    global embeddings_db, last_loaded_time
+
+    # Check if embeddings.pkl has changed, reload the embedding only when changed
+    current_mtime = embedding_file.stat().st_mtime
+    if current_mtime > last_loaded_time:
+        try:
+            with open(embedding_file, 'rb') as f:
+                raw_embeddings = pickle.load(f)
+                embeddings_db = {name: emb.to(device) for name, emb in raw_embeddings.items()}
+                last_loaded_time = current_mtime
+                print("[FaceRecognition] Reloaded embeddings from updated file.")
+        except Exception as e:
+            print(f"[FaceRecognition] Failed to load embeddings: {e}")
+            return frame, None
+        
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     boxes, probs, landmarks = mtcnn.detect(frame_rgb, landmarks=True)
     attendance_message = None
+
     if boxes is not None:
         for i, box in enumerate(boxes):
-            x1, y1, x2, y2 = [int(coord) for coord in box]
+            x1, y1, x2, y2 = map(int, box)
             if x2 <= x1 or y2 <= y1:
                 continue
 
             pad = 20
             h, w = frame.shape[:2]
-            y1 = max(0, y1 - pad)
-            y2 = min(h, y2 + pad)
-            x1 = max(0, x1 - pad)
-            x2 = min(w, x2 + pad)
+            y1, y2 = max(0, y1 - pad), min(h, y2 + pad)
+            x1, x2 = max(0, x1 - pad), min(w, x2 + pad)
 
             face = frame_rgb[y1:y2, x1:x2]
-
             if face.size == 0 or min(face.shape[:2]) < 40:
                 continue
 
             try:
                 face_tensor = preprocess_face(face)
                 with torch.no_grad():
-                    query_embedding = resnet(face_tensor)
-                    query_embedding = F.normalize(query_embedding, p=2, dim=1)
-
-                    best_match = None
+                    query_embedding = F.normalize(resnet(face_tensor), p=2, dim=1)
                     best_score = threshold
+                    best_match = None
 
                     for name, db_embedding in embeddings_db.items():
                         score = F.cosine_similarity(query_embedding, db_embedding.unsqueeze(0)).item()
@@ -82,39 +89,24 @@ def recognize_faces(frame, threshold=0.7, class_id=None, class_name=None):
                     cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                     cv2.putText(frame, f"{label} ({best_score:.2f})", (x1, y1 - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
-                    
+
                     if class_id and best_match:
-                        try:
-                            student_id = get_student_id_by_name(best_match)
-                            today_str = datetime.now().strftime("%Y-%m-%d")
-
-                            if student_id:
-                                # Check if attendance already saved in DB
-                                if not has_attendance_today(student_id, class_id, today_str):
-                                    save_attendance_to_db(student_id, class_id)
-
-                                    # Prepare attendance message for frontend (only once per day)
-                                    attendance_message = {
-                                        "student_name": best_match,
-                                        "class_name": class_name,
-                                        "timestamp": datetime.now().strftime("%H:%M:%S")
-                                    }
-                                else:
-                                    # Attendance already recorded → no message to return
-                                    attendance_message = None
-                        except Exception as e:
-                            print(f"[Attendance] Error during attendance process: {e}")
-                            attendance_message = None
-
-                        except Exception as e:
-                            print(f"[Attendance] Error during attendance marking: {e}")
-                                
-                        except Exception as e:
-                            print(f"[Attendance] Error saving attendance: {e}")
+                        student_id = get_student_id_by_name(best_match)
+                        today_str = datetime.now().strftime("%Y-%m-%d")
+                        if student_id and not has_attendance_today(student_id, class_id, today_str):
+                            saved = save_attendance_to_db(student_id, class_id)
+                            if saved:
+                                attendance_message = {
+                                    "student_name": best_match,
+                                    "class_name": class_name,
+                                    "timestamp": datetime.now().strftime("%H:%M:%S")
+                                }
             except Exception as e:
-                print(f"[FaceRecognition] Failed to load embeddings: {e}")
-                return frame, None
+                print(f"[FaceRecognition] Recognition error: {e}")
+                continue
+
     return frame, attendance_message
+
 
 def generate_embeddings_async(session_id, training_sessions):
     import io, sys

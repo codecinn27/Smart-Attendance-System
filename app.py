@@ -225,20 +225,30 @@ async def websocket_recognize(websocket: WebSocket):
             )
 
             frame, message = recognize_faces(frame, class_id=class_id, class_name=class_name)  # ← use class_id for attendance
-            # Only send attendance message if new attendance was saved
-            if message and message != last_saved:
-                last_saved = message
-            else:
-                message = None
-
             _, buffer = cv2.imencode('.jpg', frame)
             jpg_as_text = base64.b64encode(buffer).decode('utf-8')
-            # Send both frame and message as JSON
-            await websocket.send_text(json.dumps({
-                "frame": jpg_as_text,
-                "message": message
-            }))
             
+            if message:
+                student_key = (message["student_name"], message["class_name"])
+                
+                if last_saved != student_key:
+                    last_saved = student_key  # Save only (name, class) tuple
+                    await websocket.send_text(json.dumps({
+                        "frame": jpg_as_text,
+                        "message": message
+                    }))
+                else:
+                    # Just send the frame without attendance message
+                    await websocket.send_text(json.dumps({
+                        "frame": jpg_as_text
+                    }))
+            else:
+                # Send the frame only if no message
+                await websocket.send_text(json.dumps({
+                    "frame": jpg_as_text
+                }))
+
+ 
             await asyncio.sleep(0.03)
     except WebSocketDisconnect:
         print("[WebSocket] Client disconnected")
