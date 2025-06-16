@@ -64,49 +64,10 @@
     </div>
     
   </div>
-
+  <audio id="enrollSound" src="/static/sound/enroll_complete.wav" preload="auto"></audio>
+  <audio id="trainingComplete" src="/static/sound/training_complete.wav" preload="auto"></audio>
 
   <script>
-    let ws;
-    let captureCount = 0;
-
-    function startFaceCapture(studentName) {
-      if (ws) {
-        ws.close();
-      }
-
-      ws = new WebSocket(`ws://${location.host}/ws/enroll_capture/${studentName}`);
-
-      ws.onopen = () => {
-        console.log('WebSocket connected');
-        document.getElementById('webcam-container').style.display = 'block';
-        captureCount = 0;
-        sendFrameLoop();
-      };
-
-      ws.onmessage = (event) => {
-        const msg = event.data;
-
-        if (msg.startsWith('captured:')) {
-          captureCount = parseInt(msg.split(':')[1]);
-          console.log(`Captured image ${captureCount}`);
-        } else if (msg === 'done') {
-          alert('Face capture completed!');
-          ws.close();
-          document.getElementById('webcam-container').style.display = 'none';
-        } else if (msg === 'no_face') {
-          console.log('No face detected in frame');
-        } else if (msg.startsWith('data:image/jpeg;base64,')) {
-          // Display annotated frame with bounding box
-          document.getElementById('annotated-stream').src = msg;
-        }
-      };
-
-      ws.onclose = () => {
-        console.log('WebSocket closed');
-      };
-    }
-
     function openWebcamAndCapture() {
       const video = document.createElement('video');
       video.autoplay = true;
@@ -179,6 +140,12 @@
             captureCount = parseInt(msg.split(':')[1]);
             console.log(`Captured image ${captureCount}`);
           } else if (msg === 'done') {
+            const sound = document.getElementById("enrollSound");
+            sound.play().then(() => {
+              console.log('Sound played');
+            }).catch((err) => {
+              console.error('Playback failed:', err);
+            });
             alert('Face capture completed!');
             ws.close();
             stopWebcam();
@@ -220,6 +187,13 @@
 
 
       if (data.status === 'done' || data.status === 'error') {
+        const sound = document.getElementById("trainingComplete");
+          sound.play().then(() => {
+            console.log('Sound played');
+          }).catch((err) => {
+            console.error('Playback failed:', err);
+          });
+
         return;
       }
 

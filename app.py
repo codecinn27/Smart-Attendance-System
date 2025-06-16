@@ -1,6 +1,6 @@
 
 from fastapi import FastAPI, Request, WebSocket, Form, WebSocketDisconnect, BackgroundTasks
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import base64
@@ -19,6 +19,8 @@ import uuid
 from database.helper_function import get_class_id_by_value
 from datetime import datetime
 import json
+import csv
+import io
 
 app = FastAPI()
 # Set up Jinja2 templates
@@ -49,6 +51,7 @@ async def post_enroll(
     age: int = Form(...),
     enrolled_classes: list[str] = Form(None)  # for multiple checkboxes with same name
 ):
+    
     conn = sqlite3.connect("attendance.db")
     cursor = conn.cursor()
 
@@ -320,3 +323,32 @@ async def records(request: Request):
         "class_enrollments": class_enrollments,
         "attendance_records": attendance_records
     })
+
+@app.get("/download_csv")
+async def download_csv():
+    conn = sqlite3.connect("attendance.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT a.date, c.class_name, s.name, a.status, a.clock_in_time, a.clock_out_time
+        FROM attendance a
+        JOIN enrollments e ON a.enrollment_id = e.id
+        JOIN students s ON e.student_id = s.student_id
+        JOIN classes c ON e.class_id = c.class_id
+        ORDER BY a.date DESC, c.class_name, s.name
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Date", "Class", "Student", "Status", "Clock In", "Clock Out"])
+    for row in rows:
+        writer.writerow(row)
+    output.seek(0)
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=attendance_records.csv"}
+    )
