@@ -5,10 +5,13 @@ import pickle
 import numpy as np
 from facenet_pytorch import MTCNN, InceptionResnetV1
 import os
+from datetime import datetime
+from database.helper_function import save_attendance_to_db, get_student_id_by_name,  has_attendance_today
 
 # Set device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"[FaceRecognition] Using device: {device}")
+attendance_displayed_today = set()  # Set of tuples like (student_id, class_id, date)
 
 # Initialize models
 mtcnn = MTCNN(
@@ -27,7 +30,7 @@ def preprocess_face(face_img, target_size=160):
     face_tensor = (face_tensor - 127.5) / 128.0
     return face_tensor.unsqueeze(0).to(device)
 
-def recognize_faces(frame, threshold=0.7, class_id=None):
+def recognize_faces(frame, threshold=0.7, class_id=None, class_name=None):
     
     # Load latest embeddings every time the function runs
     try:
@@ -40,7 +43,7 @@ def recognize_faces(frame, threshold=0.7, class_id=None):
     
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     boxes, probs, landmarks = mtcnn.detect(frame_rgb, landmarks=True)
-
+    attendance_message = None
     if boxes is not None:
         for i, box in enumerate(boxes):
             x1, y1, x2, y2 = [int(coord) for coord in box]
@@ -80,19 +83,38 @@ def recognize_faces(frame, threshold=0.7, class_id=None):
                     cv2.putText(frame, f"{label} ({best_score:.2f})", (x1, y1 - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
                     
-                                        # ✅ Save attendance if class_id is passed and face is recognized
                     if class_id and best_match:
                         try:
-                            from database.helper_function import save_attendance_to_db, get_student_id_by_name
                             student_id = get_student_id_by_name(best_match)
+                            today_str = datetime.now().strftime("%Y-%m-%d")
+
                             if student_id:
-                                save_attendance_to_db(student_id, class_id)
+                                # Check if attendance already saved in DB
+                                if not has_attendance_today(student_id, class_id, today_str):
+                                    save_attendance_to_db(student_id, class_id)
+
+                                    # Prepare attendance message for frontend (only once per day)
+                                    attendance_message = {
+                                        "student_name": best_match,
+                                        "class_name": class_name,
+                                        "timestamp": datetime.now().strftime("%H:%M:%S")
+                                    }
+                                else:
+                                    # Attendance already recorded → no message to return
+                                    attendance_message = None
+                        except Exception as e:
+                            print(f"[Attendance] Error during attendance process: {e}")
+                            attendance_message = None
+
+                        except Exception as e:
+                            print(f"[Attendance] Error during attendance marking: {e}")
+                                
                         except Exception as e:
                             print(f"[Attendance] Error saving attendance: {e}")
             except Exception as e:
-                print(f"[FaceRecognition] Error processing face: {e}")
-                continue
-    return frame
+                print(f"[FaceRecognition] Failed to load embeddings: {e}")
+                return frame, None
+    return frame, attendance_message
 
 def generate_embeddings_async(session_id, training_sessions):
     import io, sys

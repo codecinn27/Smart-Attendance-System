@@ -16,7 +16,7 @@ import sqlite3
 from urllib.parse import quote
 from typing import Dict
 import uuid
-from database.helper_function import get_class_id_by_value, mark_attendance
+from database.helper_function import get_class_id_by_value
 from datetime import datetime
 import json
 
@@ -108,8 +108,24 @@ async def enroll_capture_ws(websocket: WebSocket, name: str):
             # Save detected face images (optional)
             for box in boxes:
                 x1, y1, x2, y2 = [int(b) for b in box]
+
+                # Clamp coordinates within frame boundaries
+                h, w = frame_bgr.shape[:2]
+                x1 = max(0, min(x1, w - 1))
+                x2 = max(0, min(x2, w - 1))
+                y1 = max(0, min(y1, h - 1))
+                y2 = max(0, min(y2, h - 1))
+
+                # Check box validity
+                if x2 <= x1 or y2 <= y1:
+                    continue  # skip invalid box
+
                 face_img = frame_bgr[y1:y2, x1:x2]
-                face_filename = save_dir / f"image_{captured_count+1}.jpg"
+
+                if face_img.size == 0:
+                    continue  # skip empty face
+
+                face_filename = save_dir / f"image_{captured_count + 1}.jpg"
                 cv2.imwrite(str(face_filename), face_img)
                 captured_count += 1
                 if captured_count >= MAX_IMAGES:
@@ -189,18 +205,39 @@ async def websocket_recognize(websocket: WebSocket):
     else:
         print("✅ Webcam opened")
 
+    last_saved = None
     try:
         while True:
             ret, frame = cap.read()
             if not ret:
                 print("❌ Failed to read from webcam")
                 break
-
-            frame = recognize_faces(frame, class_id=class_id)  # ← use class_id for attendance
             
+            # 🟢 Add class name overlay to the frame
+            cv2.putText(
+                frame, 
+                f"Class: {class_name}", 
+                (20, 40), 
+                cv2.FONT_HERSHEY_SIMPLEX, 
+                1.2, 
+                (0, 255, 0), 
+                3
+            )
+
+            frame, message = recognize_faces(frame, class_id=class_id, class_name=class_name)  # ← use class_id for attendance
+            # Only send attendance message if new attendance was saved
+            if message and message != last_saved:
+                last_saved = message
+            else:
+                message = None
+
             _, buffer = cv2.imencode('.jpg', frame)
             jpg_as_text = base64.b64encode(buffer).decode('utf-8')
-            await websocket.send_text(jpg_as_text)
+            # Send both frame and message as JSON
+            await websocket.send_text(json.dumps({
+                "frame": jpg_as_text,
+                "message": message
+            }))
             
             await asyncio.sleep(0.03)
     except WebSocketDisconnect:

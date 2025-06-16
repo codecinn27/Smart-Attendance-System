@@ -31,6 +31,7 @@
       text-align: center;
       margin-top: 4em;
     }
+    
   </style>
 </head>
 <body>
@@ -63,13 +64,15 @@
           </div>
         </div>
         <!-- Centered Progress Bar -->
-        <div id="progress-container" style="width: 300px; height: 20px; margin: 1em auto;"></div>
+        <div id="progress-container" style="display: none; width: 300px; height: 20px; margin: 1em auto;"></div>
 
         <!-- Centered Image Stream -->
-        <div style="display: flex; justify-content: center;">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
           <img id="video-stream"
               style="display: none; width: 800px; max-width: 100%; height: auto;"
               alt="Loading video..." />
+          <!-- Attendance Message -->
+          <div id="attendance-message" class="ui green message" style="display: none; margin-top: 1em; text-align: center;;"></div>
         </div>
 
         <!-- Error Message -->
@@ -93,8 +96,6 @@
             svgStyle: {width: '100%', height: '100%'}
         });
 
-        // Start animating progress bar from 0 to 100% in 4 seconds
-        bar.animate(1.0);
         let selectedClass = null;
         let ws = null;
 
@@ -105,6 +106,12 @@
           }
 
           const classParam = encodeURIComponent(selectedClass);
+
+          // Show progress bar and reset animation
+          document.getElementById("progress-container").style.display = 'block';
+          bar.set(0);           // Reset bar to 0%
+          bar.animate(1.0);     // Animate to 100%
+
           ws = new WebSocket(`ws://localhost:8000/ws/recognize?class=${classParam}`);
 
           ws.onopen = () => {
@@ -113,8 +120,34 @@
           };
 
           ws.onmessage = (event) => {
-            // Display the video feed
-            document.getElementById("video-stream").src = "data:image/jpeg;base64," + event.data;
+            let data;
+
+            try {
+                data = JSON.parse(event.data);
+            } catch (e) {
+                console.error("❌ Failed to parse WebSocket message as JSON:", event.data);
+                return;
+            }
+            if (data.frame) {
+                document.getElementById("video-stream").src = "data:image/jpeg;base64," + data.frame;
+            } else {
+                console.warn("⚠️ No frame received in WebSocket message");
+            }
+            if (data.message && data.message !== "null") {
+                let msgEl = document.getElementById("attendance-message");
+                const msg = data.message;
+                msgEl.innerHTML = `
+                  ✅ Student: <strong>${msg.student_name}</strong><br>
+                  📘 Class: <strong>${msg.class_name}</strong><br>
+                  🕒 Clock-in: <strong>${msg.timestamp}</strong>
+                `;
+                msgEl.style.display = "block";
+
+                // Hide after 10 seconds
+                setTimeout(() => {
+                    msgEl.style.display = "none";
+                }, 10000);
+            }
             document.getElementById("progress-container").style.display = 'none';
           };
 
