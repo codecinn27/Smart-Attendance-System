@@ -1,19 +1,26 @@
 import sqlite3
 
+def insert_teacher_data():
+    conn = sqlite3.connect('attendance.db')
+    cursor = conn.cursor()
 
-conn = sqlite3.connect('attendance.db')
-cursor = conn.cursor()
+    # Clear existing data
+    cursor.execute("DELETE FROM classes")
 
-cursor.execute("DELETE FROM classes")
-classes = [
-    ('Computer Vision And Pattern Recognition', 'Dr Nik Mohd Zarifie'),
-    ('High Performance Computing', 'Dr Sani Irwan'),
-    ('Engineering Economy', 'Dr Al Amin'),
-]
+    # List of classes and teachers
+    classes = [
+        ('Computer Vision And Pattern Recognition', 'Dr Nik Mohd Zarifie'),
+        ('High Performance Computing', 'Dr Sani Irwan'),
+        ('Engineering Economy', 'Dr Al Amin'),
+    ]
 
-for class_name, teacher in classes:
-    cursor.execute("INSERT INTO classes (class_name, teacher) VALUES (?, ?)", (class_name, teacher))
+    # Insert new data
+    for class_name, teacher in classes:
+        cursor.execute("INSERT INTO classes (class_name, teacher) VALUES (?, ?)", (class_name, teacher))
 
-conn.commit()
+    conn.commit()
+    conn.close()
+    print("✅ Teacher data inserted successfully!")
 
-print("Teacher Data inserted successfully!")
+if __name__ == "__main__":
+    insert_teacher_data()
