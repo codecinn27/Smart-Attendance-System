@@ -3,67 +3,100 @@
 <head>
   <title>{{ title }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui/dist/semantic.min.css">
+      <!-- Stylesheets -->
+  <link href="https://fonts.googleapis.com/css?family=Muli:300,400,400i,600,700" rel="stylesheet">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+  <link rel="stylesheet" href="/static/assets/css/main.min.css?v=2">
+
 </head>
 <body>
-  <div style="display: flex; justify-content: center;">
+
+  <div id="page-container">
+    <!-- Hero -->
+    <div class="hero">
+        <div class="bg-hero"></div>
+        <div class="container position-relative">
+          <!-- Header -->
+          <header class="py-5">
+              <div class="row">
+                  <div class="col-md-4 text-center text-md-left mb-3 mb-md-0">
+                      <a class="text-light h4" href="/">
+                          <i class="fa fa-expand text-white-50 mr-1"></i> Attendo
+                      </a>
+                  </div>
+                  <div class="col-md-8">
+                      <nav class="nav nav-header justify-content-center justify-content-md-end">
+                          <a class="nav-link" href="/enroll">Enroll</a>
+                          <a class="nav-link" href="/recognize">Recognize</a>
+                          <a class="nav-link" href="/records">Records</a>
+                      </nav>
+                  </div>
+              </div>
+          </header>
+          <!-- END Header -->
+
+          <div class="ui container">
+            <h1 class="ui header" style="color: white;">{{ title }}</h1>
+            <p style="color: white;">Welcome to the {{ title }} page.</p>
+            <div class="ui segment">
+              <form class="ui form" method="post" action="/enroll">
+                <div class="field">
+                  <label>Student Name</label>
+                  <input type="text" name="name" placeholder="Enter student name" required>
+                </div>
+
+                <div class="field">
+                  <label>Age</label>
+                  <input type="number" name="age" placeholder="Enter age" min="5" required>
+                </div>
+
+                <div class="field">
+                  <label>Enrolled Classes</label>
+                  <div class="ui checkbox">
+                    <input type="checkbox" name="enrolled_classes" value="Computer Vision And Pattern Recognition">
+                    <label>Computer Vision And Pattern Recognition</label>
+                  </div><br>
+                  <div class="ui checkbox">
+                    <input type="checkbox" name="enrolled_classes" value="High Performance Computing">
+                    <label>High Performance Computing</label>
+                  </div><br>
+                  <div class="ui checkbox">
+                    <input type="checkbox" name="enrolled_classes" value="Engineering Economy">
+                    <label>Engineering Economy</label>
+                  </div>
+                </div>
+
+                <button class="ui primary button" type="submit">Submit Enrollment</button>
+              </form>
+            </div>
+            <div class="ui segment">
+              <button class="ui basic green button" onclick="startTraining()">Start Training</button>
+              <p id="status"></p>
+              <div id="log"></div>
+              <div id="results"></div>
+            </div>
+
+            <div class="ui segment" id="webcam-container" style="display:none;">
+              <img id="annotated-stream" width="640" height="480" style="margin-top: 10px; border: 1px solid #ccc;" />
+            </div>
+            
+          </div>
+          
+      </div>
+  </div>
+  <!-- <div style="display: flex; justify-content: center;">
     <div class="ui menu">
       <a class="item" href="/" style="padding: 1em 2em;">Home</a>
       <a class="item" href="/enroll" style="padding: 1em 2em;">Enroll</a>
       <a class="item" href="/recognize" style="padding: 1em 2em;">Recognize</a>
       <a class="item" href="/records" style="padding: 1em 2em;">Records</a>
     </div>
-  </div>
+  </div> -->
 
 
 
-  <div class="ui container">
-    <h1 class="ui header">{{ title }}</h1>
-    <p>Welcome to the {{ title }} page.</p>
-    <div class="ui segment">
-      <form class="ui form" method="post" action="/enroll">
-        <div class="field">
-          <label>Student Name</label>
-          <input type="text" name="name" placeholder="Enter student name" required>
-        </div>
-
-        <div class="field">
-          <label>Age</label>
-          <input type="number" name="age" placeholder="Enter age" min="5" required>
-        </div>
-
-        <div class="field">
-          <label>Enrolled Classes</label>
-          <div class="ui checkbox">
-            <input type="checkbox" name="enrolled_classes" value="Computer Vision And Pattern Recognition">
-            <label>Computer Vision And Pattern Recognition</label>
-          </div><br>
-          <div class="ui checkbox">
-            <input type="checkbox" name="enrolled_classes" value="High Performance Computing">
-            <label>High Performance Computing</label>
-          </div><br>
-          <div class="ui checkbox">
-            <input type="checkbox" name="enrolled_classes" value="Engineering Economy">
-            <label>Engineering Economy</label>
-          </div>
-        </div>
-
-        <button class="ui primary button" type="submit">Submit Enrollment</button>
-      </form>
-    </div>
-    <div class="ui segment">
-      <button onclick="startTraining()">Start Training</button>
-      <p id="status"></p>
-      <div id="log"></div>
-      <div id="results"></div>
-    </div>
-
-    
-
-    <div class="ui segment" id="webcam-container" style="display:none;">
-      <img id="annotated-stream" width="640" height="480" style="margin-top: 10px; border: 1px solid #ccc;" />
-    </div>
-    
-  </div>
+  
   <audio id="enrollSound" src="/static/sound/enroll_complete.wav" preload="auto"></audio>
   <audio id="trainingComplete" src="/static/sound/training_complete.wav" preload="auto"></audio>
 

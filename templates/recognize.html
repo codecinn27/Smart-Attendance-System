@@ -3,6 +3,11 @@
 <head>
   <title>{{ title }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui/dist/semantic.min.css">
+      <!-- Stylesheets -->
+  <link href="https://fonts.googleapis.com/css?family=Muli:300,400,400i,600,700" rel="stylesheet">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+  <link rel="stylesheet" href="/static/assets/css/main.min.css?v=2">
   <style>
     body {
       background: #f9f9f9;
@@ -35,50 +40,77 @@
   </style>
 </head>
 <body>
-    <div style="display: flex; justify-content: center;">
+    <!-- <div style="display: flex; justify-content: center;">
       <div class="ui menu">
         <a class="item" href="/" style="padding: 1em 2em;">Home</a>
         <a class="item" href="/enroll" style="padding: 1em 2em;">Enroll</a>
         <a class="item" href="/recognize" style="padding: 1em 2em;">Recognize</a>
         <a class="item" href="/records" style="padding: 1em 2em;">Records</a>
       </div>
-    </div>
-    <div style="display: flex; justify-content: center; align-items: center; flex-direction: column; min-height: 80vh;">
-      <div class="ui container" style="text-align: center;">
-        <h2 class="ui header">🔍 Live Face Recognition</h2>
-        <div style="display: flex; justify-content: center; margin-top: 2em;">
-          <div class="ui form">
-            <div class="field">
-              <label>Select Class</label>
-              <div class="ui selection dropdown" id="classDropdown">
-                <input type="hidden" name="class">
-                <i class="dropdown icon"></i>
-                <div class="default text">Choose a class</div>
-                <div class="menu">
-                  <div class="item" data-value="Computer Vision And Pattern Recognition">Computer Vision And Pattern Recognition</div>
-                  <div class="item" data-value="High Performance Computing">High Performance Computing</div>
-                  <div class="item" data-value="Engineering Economy">Engineering Economy</div>
+    </div> -->
+
+  <div id="page-container">
+      <!-- Hero -->
+      <div class="hero">
+        <div class="bg-hero"></div>
+        <div class="container position-relative">
+          <!-- Header -->
+          <header class="py-5">
+              <div class="row">
+                  <div class="col-md-4 text-center text-md-left mb-3 mb-md-0">
+                      <a class="text-light h4" href="/">
+                          <i class="fa fa-expand text-white-50 mr-1"></i> Attendo
+                      </a>
+                  </div>
+                  <div class="col-md-8">
+                      <nav class="nav nav-header justify-content-center justify-content-md-end">
+                          <a class="nav-link" href="/enroll">Enroll</a>
+                          <a class="nav-link" href="/recognize">Recognize</a>
+                          <a class="nav-link" href="/records">Records</a>
+                      </nav>
+                  </div>
+              </div>
+          </header>
+          <!-- END Header -->
+          <div style="display: flex; justify-content: center; align-items: center; flex-direction: column; min-height: 80vh;">
+            <div class="ui container" style="text-align: center;">
+              <h2 class="ui header" style="color: white;">🔍 Live Face Recognition</h2>
+              <div style="display: flex; justify-content: center; margin-top: 2em;">
+                <div class="ui form">
+                  <div class="field">
+                    <label style="color: white;">Select Class</label>
+                    <div class="ui selection dropdown" id="classDropdown">
+                      <input type="hidden" name="class">
+                      <i class="dropdown icon"></i>
+                      <div class="default text">Choose a class</div>
+                      <div class="menu">
+                        <div class="item" data-value="Computer Vision And Pattern Recognition">Computer Vision And Pattern Recognition</div>
+                        <div class="item" data-value="High Performance Computing">High Performance Computing</div>
+                        <div class="item" data-value="Engineering Economy">Engineering Economy</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
+              <!-- Centered Progress Bar -->
+              <div id="progress-container" style="display: none; width: 300px; height: 20px; margin: 1em auto;"></div>
+
+              <!-- Centered Image Stream -->
+              <div style="margin-top: 2em; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <img id="video-stream"
+                    style="display: none; width: 800px; max-width: 100%; height: auto;"
+                    alt="Loading video..." />
+                <!-- Attendance Message -->
+                <div id="attendance-message" class="ui green message" style="display: none; margin-top: 1em; text-align: center;;"></div>
+              </div>
+
+              <!-- Error Message -->
+              <div id="error-message" class="ui red message" style="display: none; margin-top: 1em;"></div>
             </div>
           </div>
         </div>
-        <!-- Centered Progress Bar -->
-        <div id="progress-container" style="display: none; width: 300px; height: 20px; margin: 1em auto;"></div>
-
-        <!-- Centered Image Stream -->
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-          <img id="video-stream"
-              style="display: none; width: 800px; max-width: 100%; height: auto;"
-              alt="Loading video..." />
-          <!-- Attendance Message -->
-          <div id="attendance-message" class="ui green message" style="display: none; margin-top: 1em; text-align: center;;"></div>
-        </div>
-
-        <!-- Error Message -->
-        <div id="error-message" class="ui red message" style="display: none; margin-top: 1em;"></div>
       </div>
-    </div>
+    
     <audio id="attendanceRecord" src="/static/sound/attendance_record.wav" preload="auto"></audio>
     <!-- for dropdown menu js, using jquery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
