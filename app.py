@@ -21,8 +21,18 @@ from datetime import datetime
 import json
 import csv
 import io
+from fastapi.middleware.cors import CORSMiddleware
+from database.reset_database import clearDatabase
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Set up Jinja2 templates
 templates = Jinja2Templates(directory="templates")
 
@@ -352,3 +362,7 @@ async def download_csv():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=attendance_records.csv"}
     )
+    
+@app.post("/clear-data")
+def clear_data():
+    return clearDatabase()

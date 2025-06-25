@@ -72,6 +72,7 @@
             </div>
             <div class="ui segment">
               <button class="ui basic green button" onclick="startTraining()">Start Training</button>
+              <button class="ui basic red button" onclick="clearData()">Clear Data</button>
               <p id="status"></p>
               <div id="log"></div>
               <div id="results"></div>
@@ -93,6 +94,33 @@
   
   <audio id="enrollSound" src="/static/sound/enroll_complete.wav" preload="auto"></audio>
   <audio id="trainingComplete" src="/static/sound/training_complete.wav" preload="auto"></audio>
+
+  <script>
+    function clearData() {
+      fetch("http://localhost:8000/clear-data", {
+        method: "POST"
+      })
+      .then(async response => {
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error("Server error: " + errorText);
+        }
+        return response.json();
+      })
+      .then(data => {
+        alert(data.message || "Data cleared successfully");
+        document.getElementById("status").innerText = "";
+        document.getElementById("log").innerHTML = "";
+        document.getElementById("results").innerHTML = "";
+      })
+      .catch(error => {
+        console.error("Error clearing data:", error);
+        alert("Failed to clear data: " + error.message);
+      });
+    }
+  </script>
+
+
 
   <script>
     function openWebcamAndCapture() {
