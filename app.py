@@ -141,6 +141,9 @@ async def enroll_capture_ws(websocket: WebSocket, name: str):
                 face_filename = save_dir / f"image_{captured_count + 1}.jpg"
                 cv2.imwrite(str(face_filename), face_img)
                 captured_count += 1
+                # ✅ Send count update to frontend
+                await websocket.send_text(f"captured:{captured_count}")
+                
                 if captured_count >= MAX_IMAGES:
                     break
 

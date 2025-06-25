@@ -196,30 +196,7 @@
       src="/static/sound/training_complete.wav"
       preload="auto"
     ></audio>
-  <script>
-    function clearData() {
-      fetch("http://localhost:8000/clear-data", {
-        method: "POST"
-      })
-      .then(async response => {
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error("Server error: " + errorText);
-        }
-        return response.json();
-      })
-      .then(data => {
-        alert(data.message || "Data cleared successfully");
-        document.getElementById("status").innerText = "";
-        document.getElementById("log").innerHTML = "";
-        document.getElementById("results").innerHTML = "";
-      })
-      .catch(error => {
-        console.error("Error clearing data:", error);
-        alert("Failed to clear data: " + error.message);
-      });
-    }
-  </script>
+
     <!-- Script -->
     <script>
       let ws;
@@ -283,7 +260,7 @@
         const enrolledName = urlParams.get("name");
         if (enrolledName) {
           ws = new WebSocket(
-            `ws://${location.host}/ws/enroll_capture/${enrolledName}`
+            ws://${location.host}/ws/enroll_capture/${enrolledName}
           );
 
           ws.onopen = () => {
@@ -293,7 +270,7 @@
             // Reset the sample counter and progress bar
             document.getElementById(
               "sample-count"
-            ).textContent = `Samples: 0/${TOTAL_SAMPLES}`;
+            ).textContent = Samples: 0/${TOTAL_SAMPLES};
             document.getElementById("progress-bar").style.width = "0%";
             // Make sure progress bar is visible when starting
             document.querySelector("#webcam-container + div").style.display =
@@ -312,7 +289,7 @@
               // Update sample counter in real-time
               const sampleCountElement =
                 document.getElementById("sample-count");
-              sampleCountElement.textContent = `Samples: ${captureCount}/${TOTAL_SAMPLES}`;
+              sampleCountElement.textContent = Samples: ${captureCount}/${TOTAL_SAMPLES};
 
               // Update progress bar in real-time
               const progressPercent = Math.min(
@@ -364,10 +341,10 @@
       }
 
       async function pollStatus(sessionId) {
-        const statusRes = await fetch(`/train/status/${sessionId}`);
+        const statusRes = await fetch(/train/status/${sessionId});
         const data = await statusRes.json();
 
-        document.getElementById("status").innerText = `Status: ${data.status}`;
+        document.getElementById("status").innerText = Status: ${data.status};
         if (data.log) {
           document.getElementById("log").innerText = data.log;
         }
