@@ -1,0 +1,9 @@
+1) button to reset the face recognition model empty face
+    -> for new user to have better experience on the process
+
+2) telegram notification 
+    -> phone number then bot automate to send message to the user about the attendance 
+
+3) subclass (all,CVPR, HPC, E&E) at the record route
+
+4) enroll new face webcam have progress bar consistently  (ask chiawna)

@@ -13,4 +13,4 @@ basic_testing/version3/dataset
 *.db
 
 # Static/media uploads (optional)
-static*
+
