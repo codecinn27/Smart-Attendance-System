@@ -40,6 +40,8 @@ A lightweight and scalable **Smart Attendance System** that uses **facial recogn
 ---
 
 ## 🖥️ Demo
+[Youtube video demo](https://youtu.be/E7SeZHRXmcY?si=ai1RQx5f7wagXHoG)
+
 1) Main page : http://localhost:8000
 ![image_2025-06-26_14-15-21](https://github.com/user-attachments/assets/3a0426d6-4199-4f62-b6b8-3b47f5e8c029)
 
