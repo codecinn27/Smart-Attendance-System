@@ -2,6 +2,10 @@
 
 A lightweight and scalable **Smart Attendance System** that uses **facial recognition** to automate and simplify attendance tracking. Built with `FastAPI` for the backend, `FaceNet-PyTorch` for facial recognition, and `SQLite` for local data storage. Designed to be accurate, fast, and practical for real-world applications in classrooms, offices, and events.
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/46a6cffe-3ef6-43e1-ba67-0a72abd68b59" alt="gif walkthrough smart attendance">
+</p>
+
 ---
 
 ## 🚀 Features
